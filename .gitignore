@@ -1,0 +1,25 @@
+# Build artifacts
+.build/
+*.app/
+release/
+*.zip
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+
+# macOS
+.DS_Store
+
+# Temporary files
+/tmp/
+*.tmp
+*.log
+
+# Icon generation
+*.iconset/
