@@ -2,6 +2,17 @@
 
 A macOS app for generating iOS app icons from a single image with customizable corner radius.
 
+## Latest Release: v1.1.0
+
+### What's New
+- ✅ **FIXED**: Correct icon pixel sizes (no more 2x size errors)
+- ✅ **FIXED**: Icon-83.5@2x now properly included in Contents.json  
+- ✅ **FIXED**: File picker dialog no longer appears multiple times
+- ✅ **IMPROVED**: Pixel-perfect image resizing using NSBitmapImageRep
+- ✅ **NEW**: Auto-override existing AppIcon.appiconset folders
+
+[View full changelog](CHANGELOG.md)
+
 ## Screenshots
 
 <table>

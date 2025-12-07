@@ -145,7 +145,7 @@ class IconGeneratorViewModel: ObservableObject {
         let pixelHeight = Int(size.height)
         
         guard let sourceImageData = image.tiffRepresentation,
-              let sourceBitmap = NSBitmapImageRep(data: sourceImageData) else {
+              let _ = NSBitmapImageRep(data: sourceImageData) else {
             return nil
         }
         
