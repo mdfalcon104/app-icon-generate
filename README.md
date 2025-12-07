@@ -2,7 +2,14 @@
 
 A macOS app for generating iOS app icons from a single image with customizable corner radius.
 
-![App Icon Generator Screenshot](screenshot.png)
+## Screenshots
+
+<table>
+<tr>
+<td><img src="images/before.png" alt="Before" width="400"/><br/><em>Select your image and corner radius</em></td>
+<td><img src="images/after.png" alt="After" width="400"/><br/><em>Generated icons ready for Xcode</em></td>
+</tr>
+</table>
 
 ## Features
 

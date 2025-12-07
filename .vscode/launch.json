@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:app-icon-generate}",
+            "name": "Debug AppIconGenerator",
+            "target": "AppIconGenerator",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug AppIconGenerator"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:app-icon-generate}",
+            "name": "Release AppIconGenerator",
+            "target": "AppIconGenerator",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release AppIconGenerator"
+        }
+    ]
+}
