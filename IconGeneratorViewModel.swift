@@ -24,7 +24,7 @@ class IconGeneratorViewModel: ObservableObject {
     @Published var generateLogo: Bool = false
     
     // iOS App Icon sizes according to Apple's guidelines
-    let iconSizes: [(size: Int, scale: Int, idiom: String, filename: String)] = [
+    let iconSizes: [(size: Double, scale: Int, idiom: String, filename: String)] = [
         // iPhone
         (20, 2, "iphone", "Icon-20@2x.png"),
         (20, 3, "iphone", "Icon-20@3x.png"),
@@ -44,7 +44,7 @@ class IconGeneratorViewModel: ObservableObject {
         (40, 2, "ipad", "Icon-40@2x.png"),
         (76, 1, "ipad", "Icon-76.png"),
         (76, 2, "ipad", "Icon-76@2x.png"),
-        (83, 2, "ipad", "Icon-83.5@2x.png"),
+        (83.5, 2, "ipad", "Icon-83.5@2x.png"),
         
         // App Store
         (1024, 1, "ios-marketing", "Icon-1024.png"),
@@ -63,16 +63,20 @@ class IconGeneratorViewModel: ObservableObject {
             do {
                 // Create output directory
                 let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
-                let timestamp = Int(Date().timeIntervalSince1970)
-                let outputDir = desktopURL.appendingPathComponent("AppIcon.appiconset_\(timestamp)")
+                let outputDir = desktopURL.appendingPathComponent("AppIcon.appiconset")
+                
+                // Remove existing folder if it exists
+                if FileManager.default.fileExists(atPath: outputDir.path) {
+                    try FileManager.default.removeItem(at: outputDir)
+                }
+                
                 try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
                 
                 // Generate all icon sizes
-                var contentsJSON: [String: Any] = ["images": [], "info": ["version": 1, "author": "xcode"]]
                 var images: [[String: Any]] = []
                 
                 for iconConfig in self.iconSizes {
-                    let pixelSize = iconConfig.size * iconConfig.scale
+                    let pixelSize = Int(iconConfig.size * Double(iconConfig.scale))
                     let filename = iconConfig.filename
                     
                     if let resizedImage = self.resizeImage(sourceImage, to: CGSize(width: pixelSize, height: pixelSize)) {
@@ -80,24 +84,29 @@ class IconGeneratorViewModel: ObservableObject {
                         let outputURL = outputDir.appendingPathComponent(filename)
                         
                         if self.saveImage(finalImage, to: outputURL) {
-                            var imageInfo: [String: Any] = [
+                            let sizeString = iconConfig.size == floor(iconConfig.size) ? 
+                                "\(Int(iconConfig.size))x\(Int(iconConfig.size))" : 
+                                "\(iconConfig.size)x\(iconConfig.size)"
+                            
+                            let imageInfo: [String: Any] = [
                                 "filename": filename,
                                 "idiom": iconConfig.idiom,
-                                "size": "\(iconConfig.size)x\(iconConfig.size)"
+                                "scale": "\(iconConfig.scale)x",
+                                "size": sizeString
                             ]
-                            
-                            if iconConfig.scale > 1 {
-                                imageInfo["scale"] = "\(iconConfig.scale)x"
-                            } else {
-                                imageInfo["scale"] = "1x"
-                            }
                             
                             images.append(imageInfo)
                         }
                     }
                 }
                 
-                contentsJSON["images"] = images
+                let contentsJSON: [String: Any] = [
+                    "images": images,
+                    "info": [
+                        "author": "xcode",
+                        "version": 1
+                    ]
+                ]
                 
                 // Save Contents.json
                 let contentsURL = outputDir.appendingPathComponent("Contents.json")
@@ -132,16 +141,51 @@ class IconGeneratorViewModel: ObservableObject {
     }
     
     private func resizeImage(_ image: NSImage, to size: CGSize) -> NSImage? {
-        let newImage = NSImage(size: size)
-        newImage.lockFocus()
+        let pixelWidth = Int(size.width)
+        let pixelHeight = Int(size.height)
         
-        NSGraphicsContext.current?.imageInterpolation = .high
-        image.draw(in: NSRect(origin: .zero, size: size),
-                   from: NSRect(origin: .zero, size: image.size),
-                   operation: .copy,
-                   fraction: 1.0)
+        guard let sourceImageData = image.tiffRepresentation,
+              let _ = NSBitmapImageRep(data: sourceImageData) else {
+            return nil
+        }
         
-        newImage.unlockFocus()
+        // Create bitmap with exact pixel dimensions
+        guard let resizedBitmap = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: pixelWidth,
+            pixelsHigh: pixelHeight,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else {
+            return nil
+        }
+        
+        NSGraphicsContext.saveGraphicsState()
+        guard let context = NSGraphicsContext(bitmapImageRep: resizedBitmap) else {
+            return nil
+        }
+        
+        NSGraphicsContext.current = context
+        context.imageInterpolation = .high
+        
+        image.draw(
+            in: NSRect(x: 0, y: 0, width: pixelWidth, height: pixelHeight),
+            from: NSRect(origin: .zero, size: image.size),
+            operation: .copy,
+            fraction: 1.0
+        )
+        
+        NSGraphicsContext.restoreGraphicsState()
+        
+        // Create NSImage from bitmap
+        let newImage = NSImage(size: NSSize(width: pixelWidth, height: pixelHeight))
+        newImage.addRepresentation(resizedBitmap)
+        
         return newImage
     }
     
@@ -165,11 +209,14 @@ class IconGeneratorViewModel: ObservableObject {
     }
     
     private func saveImage(_ image: NSImage, to url: URL) -> Bool {
+        // Create bitmap representation with exact pixel dimensions
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return false
         }
         
         let bitmapRep = NSBitmapImageRep(cgImage: cgImage)
+        bitmapRep.size = image.size // Ensure size matches
+        
         guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
             return false
         }
@@ -185,8 +232,13 @@ class IconGeneratorViewModel: ObservableObject {
     
     private func generateLogoImageset(sourceImage: NSImage, outputDir: URL) -> Bool {
         do {
-            let timestamp = Int(Date().timeIntervalSince1970)
-            let logoDir = outputDir.appendingPathComponent("Logo.imageset_\(timestamp)")
+            let logoDir = outputDir.appendingPathComponent("Logo.imageset")
+            
+            // Remove existing folder if it exists
+            if FileManager.default.fileExists(atPath: logoDir.path) {
+                try FileManager.default.removeItem(at: logoDir)
+            }
+            
             try FileManager.default.createDirectory(at: logoDir, withIntermediateDirectories: true)
             
             // Generate logo in 3 sizes: @1x, @2x, @3x

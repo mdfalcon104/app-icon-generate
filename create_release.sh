@@ -38,7 +38,7 @@ cat > "$APP_DIR/Contents/Info.plist" <<'PLIST'
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
+	<string>1.1.0</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>NSHighResolutionCapable</key>
@@ -69,8 +69,17 @@ cp -R "$APP_DIR" "$RELEASE_DIR/"
 
 # Create README for release
 cat > "$RELEASE_DIR/README.txt" <<'README'
-App Icon Generator v1.0
-=======================
+App Icon Generator v1.1.0
+=========================
+
+WHAT'S NEW in v1.1.0
+--------------------
+✅ FIXED: Correct icon pixel sizes (no more 2x size errors)
+✅ FIXED: Icon-83.5@2x now properly included in Contents.json
+✅ FIXED: File picker dialog no longer appears multiple times
+✅ IMPROVED: Pixel-perfect image resizing using NSBitmapImageRep
+✅ NEW: Auto-override existing AppIcon.appiconset folders
+✅ NEW: Support for 83.5pt iPad Pro icon size
 
 INSTALLATION
 ------------
@@ -106,12 +115,12 @@ README
 
 # Create ZIP archive
 cd "$RELEASE_DIR"
-zip -r "../AppIconGenerator-v1.0.zip" . -q
+zip -r "../AppIconGenerator-v1.1.0.zip" . -q
 cd ..
 
 echo ""
 echo "✅ Release package created!"
-echo "📍 Location: AppIconGenerator-v1.0.zip"
+echo "📍 Location: AppIconGenerator-v1.1.0.zip"
 echo "📦 Size: $(du -h AppIconGenerator-v1.0.zip | cut -f1)"
 echo ""
 echo "Contents:"

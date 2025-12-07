@@ -136,6 +136,7 @@ struct ContentView: View {
 struct DropZoneView: View {
     @Binding var image: NSImage?
     @State private var isDragOver = false
+    @State private var justDropped = false
     
     var body: some View {
         ZStack {
@@ -171,10 +172,18 @@ struct DropZoneView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            openFileDialog()
+            if !isDragOver && !justDropped {
+                openFileDialog()
+            }
         }
         .onDrop(of: [.image, .fileURL], isTargeted: $isDragOver) { providers in
             guard let provider = providers.first else { return false }
+            
+            // Set flag to prevent tap gesture from firing
+            justDropped = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                justDropped = false
+            }
             
             if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                 provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { data, error in
