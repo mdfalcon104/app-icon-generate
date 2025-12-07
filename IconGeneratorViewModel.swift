@@ -63,12 +63,16 @@ class IconGeneratorViewModel: ObservableObject {
             do {
                 // Create output directory
                 let desktopURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
-                let timestamp = Int(Date().timeIntervalSince1970)
-                let outputDir = desktopURL.appendingPathComponent("AppIcon.appiconset_\(timestamp)")
+                let outputDir = desktopURL.appendingPathComponent("AppIcon.appiconset")
+                
+                // Remove existing folder if it exists
+                if FileManager.default.fileExists(atPath: outputDir.path) {
+                    try FileManager.default.removeItem(at: outputDir)
+                }
+                
                 try FileManager.default.createDirectory(at: outputDir, withIntermediateDirectories: true)
                 
                 // Generate all icon sizes
-                var contentsJSON: [String: Any] = ["images": [], "info": ["version": 1, "author": "xcode"]]
                 var images: [[String: Any]] = []
                 
                 for iconConfig in self.iconSizes {
@@ -83,21 +87,22 @@ class IconGeneratorViewModel: ObservableObject {
                             var imageInfo: [String: Any] = [
                                 "filename": filename,
                                 "idiom": iconConfig.idiom,
+                                "scale": "\(iconConfig.scale)x",
                                 "size": "\(iconConfig.size)x\(iconConfig.size)"
                             ]
-                            
-                            if iconConfig.scale > 1 {
-                                imageInfo["scale"] = "\(iconConfig.scale)x"
-                            } else {
-                                imageInfo["scale"] = "1x"
-                            }
                             
                             images.append(imageInfo)
                         }
                     }
                 }
                 
-                contentsJSON["images"] = images
+                let contentsJSON: [String: Any] = [
+                    "images": images,
+                    "info": [
+                        "author": "xcode",
+                        "version": 1
+                    ]
+                ]
                 
                 // Save Contents.json
                 let contentsURL = outputDir.appendingPathComponent("Contents.json")
@@ -185,8 +190,13 @@ class IconGeneratorViewModel: ObservableObject {
     
     private func generateLogoImageset(sourceImage: NSImage, outputDir: URL) -> Bool {
         do {
-            let timestamp = Int(Date().timeIntervalSince1970)
-            let logoDir = outputDir.appendingPathComponent("Logo.imageset_\(timestamp)")
+            let logoDir = outputDir.appendingPathComponent("Logo.imageset")
+            
+            // Remove existing folder if it exists
+            if FileManager.default.fileExists(atPath: logoDir.path) {
+                try FileManager.default.removeItem(at: logoDir)
+            }
+            
             try FileManager.default.createDirectory(at: logoDir, withIntermediateDirectories: true)
             
             // Generate logo in 3 sizes: @1x, @2x, @3x
